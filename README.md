@@ -1,4 +1,4 @@
-# Which Customers Are Worth Saving?
+# Customer Churn Prediction: Which Customers Are Worth Saving?
 ### Predicting Customer Churn and Valuing Retention with the IBM Telco Dataset
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
@@ -11,17 +11,25 @@
 
 ## Abstract
 
-Customer churn, the loss of subscribers to cancellation, is a direct and recurring revenue loss for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: *which* customers are worth trying to save, and whether doing so is profitable.
+Customer churn, the loss of subscribers to cancellation, is a direct and recurring revenue loss for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: 
 
-Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compare eleven classification models selected on cross-validated log loss. A regularized logistic regression performs best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. Contract type, tenure and fiber-optic internet are the strongest determinants of churn: a two-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds.
+*which* customers are worth trying to save, and whether doing so is profitable.
 
-I then value each customer by their expected remaining lifetime and test a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raises campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives conservative changes to the valuation assumptions, but the dollar totals do not, and roughly 30% of the profit rests on seven customers. The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
+Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. 
+
+Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds.
+
+I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives conservative changed to the valuation assumptions, but the dollar totals did not, and roughly 30% of the profit rested on 7 customers. 
+
+The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
 
 ---
 
 ## 1. Introduction
 
-**Customer churn** is when a customer stops doing business with a company. For a telecom provider, it means a subscriber cancels phone or internet service. Each cancellation removes a stream of monthly revenue, and acquiring a replacement customer typically costs more than retaining an existing one.
+**Customer churn** is when a customer stops doing business with a company. 
+
+For a telecom provider, it means a subscriber cancels phone or internet service. Each cancellation removes a stream of monthly revenue, and acquiring a replacement customer typically costs more than retaining an existing one.
 
 The **churn rate** is the share of customers who leave in a given period. In the data used here, 26.5% of customers left within a single month.
 
@@ -54,10 +62,12 @@ This project treats churn prediction as the first step of a decision problem. It
 
 Customer churn is one of the most common portfolio projects in data science, and this dataset is one of the most common ways to do it. Hundreds of public versions follow the same template: encode the variables, often oversample the minority class, train several classifiers, and report an accuracy score of around 80% with a feature-importance chart.
 
-That template has three gaps that matter to a business.
+That template has 3 gaps that matter to a business.
 
 1. **It optimizes the wrong target.** Accuracy rewards predicting which side of 50% a customer falls on. It ignores how confident the prediction is, and on this data a model that predicts "nobody churns" is already 73.5% accurate.
+   
 2. **It ignores customer value.** A customer likely to leave next month regardless, on a low bill, is worth far less to save than a long-term contract customer showing signs of risk. Ranking by risk alone treats them the same.
+   
 3. **It never asks whether acting on the model pays.** A retention offer has a cost and a success rate. Without them, there is no way to say how many customers to contact, or whether to run a campaign at all.
 
 This project was built to close those gaps, using a well-known dataset on purpose. If the conclusions differ from the hundred other versions, the difference comes from the method, not the data.
@@ -105,7 +115,7 @@ The data is IBM's [Telco Customer Churn](https://github.com/IBM/telco-customer-c
 | Churned within the last month | 1,869 (26.5%) |
 | Duplicates | None |
 | Missing values | 11 blank `TotalCharges`, all customers with zero tenure who have not yet been billed; set to $0 |
-| Training / test split | 5,634 / 1,409, stratified on churn |
+| Training/test split | 5,634 / 1,409, stratified on churn |
 
 ### 5.3 Summary statistics: continuous variables
 
@@ -125,13 +135,16 @@ Churners and non-churners differ sharply on the two main continuous variables. C
 | **Contract:** month-to-month | 55.0% | **42.7%** |
 | one year | 20.9% | 11.3% |
 | two year | 24.1% | **2.8%** |
+
 | **Internet:** fiber optic | 44.0% | **41.9%** |
 | DSL | 34.4% | 19.0% |
 | none | 21.7% | 7.4% |
+
 | **Payment:** electronic check | 33.6% | **45.3%** |
 | mailed check | 22.9% | 19.1% |
 | bank transfer (automatic) | 21.9% | 16.7% |
 | credit card (automatic) | 21.6% | 15.2% |
+
 | **Paperless billing:** yes / no | 59.2% / 40.8% | 33.6% / 16.3% |
 | **Senior citizen:** yes / no | 16.2% / 83.8% | 41.7% / 23.6% |
 | **Partner:** yes / no | 48.3% / 51.7% | 19.7% / 33.0% |
@@ -141,7 +154,7 @@ Churners and non-churners differ sharply on the two main continuous variables. C
 Two patterns stand out before any modeling:
 
 - **Commitment predicts loyalty.** Month-to-month customers churn 15 times as often as two-year contract customers. More than half of customers in their first six months churn, against fewer than 10% of those past four years.
-- **Raw differences overstate some effects.** Senior citizens churn at 41.7% against 23.6%, but much of that gap disappears once contract, services and tenure are controlled for (Section 8.2). Descriptive tables alone would mislead here.
+- **Raw differences overstate some effects.** Senior citizens churn at 41.7% against 23.6%, but much of that gap disappears once contract, services, and tenure are controlled for (Section 8.2). Descriptive tables alone would mislead here.
 
 ---
 
@@ -176,9 +189,13 @@ Two patterns stand out before any modeling:
 ### 6.3 Variable treatment
 
 - **Categorical variables** are one-hot encoded, with one reference category dropped. "No internet service" and "No phone service" are merged into "No" for the add-on variables, since they duplicate `InternetService` and `PhoneService`.
+  
 - **Tenure** enters as log(1 + tenure). Churn falls steeply in the first year and slowly afterward, and the log form captures that curvature. It was the single largest improvement in model fit (Section 9.4).
+  
 - **`MonthlyCharges` is excluded as a predictor.** The services a customer holds explain **99.88%** of the variation in the monthly bill (R² from a linear regression on the service variables), so it is close to a linear combination of variables already in the model. Including it does not improve fit and makes the coefficients unstable. It is still used to value customers.
+  
 - **`TotalCharges` is excluded** because it is approximately tenure × monthly charges and duplicates both.
+  
 - **Continuous variables are standardized**, so their odds ratios are per one standard deviation.
 
 ---
@@ -187,7 +204,7 @@ Two patterns stand out before any modeling:
 
 ### 7.1 Research design
 
-The data is split 80/20, stratified on churn, before any analysis. Every modeling choice (feature specification, hyperparameters, model selection, calibration) is made with 5-fold stratified cross-validation on the training 80%. The test set is used only to report results. No oversampling or class weighting is applied, because both distort predicted probabilities, and Section 7.5 multiplies probabilities by dollar values.
+The data are split 80/20, stratified on churn, before any analysis. Every modeling choice (feature specification, hyperparameters, model selection, calibration) is made with 5-fold stratified cross-validation on the training 80%. The test set is used only to report results. No oversampling or class weighting is applied because both distort predicted probabilities, and Section 7.5 multiplies probabilities by dollar values.
 
 ### 7.2 Specification search
 
@@ -208,7 +225,8 @@ Candidate feature sets were compared within logistic regression on cross-validat
 **Selection criterion: cross-validated log loss.** Log loss measures the quality of predicted probabilities, which is what the campaign analysis needs. Two alternatives were considered and rejected:
 
 - *Accuracy* barely separates the candidates: all eleven score between 78.6% and 80.9%. It also ignores how confident a prediction is, and it is easily inflated on imbalanced data.
-- *AIC* requires a likelihood and a well-defined parameter count. Logistic regression has both, but tree ensembles, SVMs and nearest-neighbor models do not, so AIC cannot rank across these families. Cross-validated log loss estimates the same quantity (out-of-sample predictive likelihood) directly, for any model.
+  
+- *AIC* requires a likelihood and a well-defined parameter count. Logistic regression has both, but tree ensembles, SVMs, and nearest-neighbor models do not, so AIC cannot rank across these families. Cross-validated log loss estimates the same quantity (out-of-sample predictive likelihood) directly, for any model.
 
 **Tie rule.** A model counts as tied with the best if its fold-by-fold log loss gap is less than two standard errors. Among tied models, the simplest is chosen.
 
@@ -259,7 +277,7 @@ Logistic regression has the lowest log loss outright. XGBoost and LightGBM are s
 |---|---|---|---|---|---|---|---|
 | 80.7% | 0.677 | 0.521 | 0.589 | 0.849 | 0.411 | 0.134 | 2.88 |
 
-Precision, recall and F1 use a 0.5 cutoff for comparability with other studies; the campaign itself uses expected value, not a fixed cutoff. On the test set, the log loss gap to XGBoost is −0.0018 (95% CI −0.0055 to +0.0018), and to LightGBM −0.0007 (95% CI −0.0043 to +0.0030). Both intervals include zero, which confirms the tie.
+Precision, recall, and F1 use a 0.5 cutoff for comparability with other studies; the campaign itself uses expected value, not a fixed cutoff. On the test set, the log loss gap to XGBoost is −0.0018 (95% CI −0.0055 to +0.0018), and to LightGBM −0.0007 (95% CI −0.0043 to +0.0030). Both intervals include zero, which confirms the tie.
 
 ![Calibration](outputs/calibration.png)
 
@@ -288,10 +306,12 @@ The L1 penalty set the coefficients on gender, partner status, device protection
 Three findings stand out:
 
 - **Contract type dominates.** A two-year contract is associated with 78% lower churn odds than month-to-month, the largest effect in the model.
+  
 - **Fiber optic is the most actionable finding.** Fiber is the premium service, yet fiber customers have 2.5 times the churn odds of comparable DSL customers. This points to fiber pricing or service quality. The data cannot distinguish between them.
-- **The senior-citizen gap is mostly composition.** Raw churn is 41.7% for seniors against 23.6% for others, but the conditional odds ratio is only 1.07. Most of the raw gap reflects the contracts, services and tenure seniors tend to have, not age itself.
+  
+- **The senior-citizen gap is mostly composition.** Raw churn is 41.7% for seniors against 23.6% for others, but the conditional odds ratio is only 1.07. Most of the raw gap reflects the contracts, services, and tenure seniors tend to have, not age itself.
 
-**Answer to RQ1:** commitment (contract and tenure) is the main determinant of churn, followed by service type (fiber optic) and billing method (electronic check, paperless billing). Protection and support add-ons are associated with lower churn.
+**Answer to RQ1:** Commitment (contract and tenure) is the main determinant of churn, followed by service type (fiber optic) and billing method (electronic check, paperless billing). Protection and support add-ons are associated with lower churn.
 
 ### 8.3 Customer value (RQ3)
 
@@ -301,9 +321,9 @@ Three findings stand out:
 | One year | 11.1% | 9.0 | $65.50 | **$590** |
 | Two year | 2.9% | 24 (capped) | $60.87 | **$1,461** |
 
-The common rule of thumb, that a saved customer is worth a year of revenue, overstates the value of month-to-month customers about five times over. A month-to-month customer saved this month is likely to leave next month anyway.
+The common rule of thumb that a saved customer is worth a year of revenue overstates the value of month-to-month customers about five times over. A month-to-month customer saved this month is likely to leave next month anyway.
 
-**Answer to RQ3:** a retained customer's value varies almost tenfold by contract type, from about $150 for month-to-month to about $1,460 for two-year customers. An offer that moves a customer onto a contract changes their value far more than a one-time discount does.
+**Answer to RQ3:** A retained customer's value varies almost tenfold by contract type, from about $150 for month-to-month to about $1,460 for two-year customers. An offer that moves a customer onto a contract changes their value far more than a one-time discount does.
 
 ### 8.4 Targeting and campaign profitability (RQ4)
 
@@ -321,7 +341,7 @@ Ranking by probability reaches *more* churners (260 against 201) but earns far l
 
 An important caveat: profit is computed with the same value formula used to build the expected-value ranking, which gives that ranking a structural advantage. The fair interpretation is conditional: *if the customer values are approximately right, target by value rather than by risk.* Section 9.3 tests how far the values can move before that conclusion breaks.
 
-**Answer to RQ4:** under the base-case assumptions, target by expected value. Contacting about a third of customers is profitable, while ranking by churn probability alone is roughly break-even. Profitability depends heavily on offer cost and success rate (Section 9.3).
+**Answer to RQ4:** Under the base-case assumptions, target by expected value. Contacting about a third of customers is profitable, while ranking by churn probability alone is roughly break-even. Profitability depends heavily on offer cost and success rate (Section 9.3).
 
 ---
 
@@ -339,7 +359,7 @@ The specification in Section 7.2 was chosen using logistic regression, and every
 | XGBoost | raw (tenure, MonthlyCharges, TotalCharges) | 0.4109 |
 | LightGBM | raw | 0.4110 |
 
-The conclusion is unchanged. Neither extra tuning nor the alternative features lets the boosting models beat logistic regression.
+The conclusion is unchanged. Neither extra tuning nor the alternative features let the boosting models beat logistic regression.
 
 ### 9.2 Calibration
 
@@ -365,24 +385,32 @@ Under either change, total profit falls by about 30%, but ranking by value beats
 | $20 | 89 contacts, $312 | **447 contacts, $5,610** | 619 contacts, $13,302 |
 | $50 | 1 contact, $45 | 41 contacts, −$747 | 142 contacts, $1,170 |
 
-At a $50 offer and 20% success rate, the model expected 41 contacts to be profitable and they lost $747. With expensive offers, the margin for error is thin and a few customers flip the outcome. That is the strongest case in this study for testing an offer on a small randomized group before scaling it.
+At a $50 offer and 20% success rate, the model expected 41 contacts to be profitable, and they lost $747. With expensive offers, the margin for error is thin, and a few customers flip the outcome. That is the strongest case in this study for testing an offer on a small randomized group before scaling it.
 
 ### 9.4 Specification tests and excluded variables
 
 - **Add-on count (`n_addons`).** An early version included the number of add-ons, which is the exact sum of six variables already in the model (perfect multicollinearity). It was removed.
-- **Monthly charges.** With `n_addons` included, the odds ratio on monthly charges was 0.82. After removing `n_addons` it became 2.53, and fiber optic fell from 2.95 to 1.18. A sign reversal like that is a classic multicollinearity symptom. Dropping monthly charges left fit unchanged (CV log loss 0.4100 either way) and produced stable coefficients.
+  
+- **Monthly charges.** With `n_addons` included, the odds ratio on monthly charges was 0.82. After removing `n_addons,`, it became 2.53, and fiber optic fell from 2.95 to 1.18. A sign reversal like that is a classic multicollinearity symptom. Dropping monthly charges left fit unchanged (CV log loss 0.4100 either way) and produced stable coefficients.
+  
 - **Tenure transformation.** Replacing tenure with log(1 + tenure) reduced CV log loss from 0.4176 to 0.4100, the largest single improvement.
+  
 - **Fiber × tenure interaction.** Tested to see whether fiber customers churn early and then stabilize. Fit worsened slightly (0.4102), so it was not retained.
 
 ---
 
 ## 10. Limitations
 
-- **Cross-sectional data.** The dataset is a single snapshot with no churn dates, usage history or contract end dates. Time-based validation and full survival models are not possible, and monthly hazards are inferred from one period.
+- **Cross-sectional data.** The dataset is a single snapshot with no churn dates, usage history, or contract end dates. Time-based validation and full survival models are not possible, and monthly hazards are inferred from one period.
+  
 - **Constant-hazard valuation.** Customer value assumes each contract group churns at a constant monthly rate. It ignores contract terms that prevent leaving mid-contract and likely misstates the value of contract customers. Section 9.3 bounds the impact.
+  
 - **Associations, not causal effects.** The odds ratios describe who churns, not what would prevent it. Moving a customer from electronic check to automatic payment will not necessarily change their churn risk.
+  
 - **Assumed intervention parameters.** Offer cost and success rate are placeholders. Real values require a randomized experiment.
+  
 - **Structural advantage of value ranking.** Profit is evaluated with the same value formula used for ranking, so the comparison shows what happens if the values are right, not whether they are.
+  
 - **Sample data.** A 26.5% monthly churn rate is far above real telecom levels. Dollar figures demonstrate the method and are not forecasts.
 
 ---
@@ -391,7 +419,7 @@ At a $50 offer and 20% success rate, the model expected 41 contacts to be profit
 
 This study set out to move churn analysis from prediction to decision.
 
-On prediction, the main finding is that model complexity does not matter on this data. Eleven models, from naive Bayes to XGBoost, were compared on cross-validated log loss. A regularized logistic regression performed best, the top three were statistically tied, and extra tuning did not change that. The predictive ceiling comes from the information in the data, not from the algorithm.
+On prediction, the main finding is that model complexity does not matter on this data. Eleven models, from naive Bayes to XGBoost, were compared on cross-validated log loss. A regularized logistic regression performed best; the top three were statistically tied, and extra tuning did not change that. The predictive ceiling comes from the information in the data, not from the algorithm.
 
 On determinants, contract type and tenure dominate: customers who have committed stay. Fiber-optic customers churn at 2.5 times the odds of comparable DSL customers, the clearest signal for a product team. Several large raw differences, notably for senior citizens, largely disappear once other characteristics are held constant.
 
@@ -399,7 +427,7 @@ On decisions, the most consequential step happened after the model. Valuing cust
 
 The practical recommendations follow directly:
 
-1. **Target retention offers by expected value, not churn risk alone.**
+1. **Target retention offers by expected value, not churn risk alone. ****
 2. **Favor offers that convert customers to contracts** over one-time discounts, because contract status changes customer value nearly tenfold.
 3. **Investigate fiber-optic churn** as a product or pricing issue.
 4. **Test any offer on a randomized group before scaling it**, since the campaign's profitability depends on a success rate this data cannot measure.
@@ -425,7 +453,7 @@ cd ..
 python robustness_check.py              # Section 9.1, a few minutes
 ```
 
-Package versions are pinned and random seeds are fixed, so results match this document.
+Package versions are pinned, and random seeds are fixed, so results match this document.
 
 ```
 data/telco_raw.csv           IBM Telco Customer Churn sample data
@@ -451,4 +479,4 @@ requirements.txt             pinned package versions
 Data Analyst | Business Analytics | Economics
 GitHub: https://github.com/fariat14
 
-© 2026 Faria T. All rights reserved. This repository is provided for portfolio and educational viewing. No part of it may be reproduced, redistributed or used commercially without written permission. If referencing this work, please provide attribution. The IBM Telco dataset is IBM sample data, used here for educational purposes.
+© 2026 Faria T. All rights reserved. This repository is provided for portfolio and educational viewing. No part of it may be reproduced, redistributed,d or used commercially without written permission. If referencing this work, please provide attribution. The IBM Telco dataset is IBM sample data, used here for educational purposes.
