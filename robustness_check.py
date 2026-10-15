@@ -7,7 +7,7 @@ have more hyperparameters, so this gives XGBoost and LightGBM:
   - the raw numeric features (tenure, MonthlyCharges, TotalCharges) as an alternative.
 Training data only, 5-fold CV log loss. Takes a few minutes.
 
-Run from the repo root:  python robustness_check.py
+Run from the repo folder:  python robustness_check.py
 """
 import warnings; warnings.filterwarnings('ignore')
 import pandas as pd, numpy as np
@@ -21,7 +21,7 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 
 SEED = 42
-df = pd.read_csv('data/telco_raw.csv')
+df = pd.read_csv('telco_raw.csv')
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce').fillna(0)
 df['churn'] = (df['Churn'] == 'Yes').astype(int)
 addons = ['OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies']

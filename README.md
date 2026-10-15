@@ -11,13 +11,13 @@
 
 ## Abstract
 
-Customer churn, the loss of subscribers through cancellation, directly reduces recurring revenue for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: *which* customers are worth trying to save, and whether doing so is profitable. Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds. I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives conservative changes to the valuation assumptions, but the dollar totals did not, and roughly 30% of the profit rested on 7 customers. The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
+Customer churn, the loss of subscribers through cancellation, directly reduces recurring revenue for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: *which* customers are worth trying to save, and whether doing so is profitable. Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds. I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives every sensitivity check, but its size does not: it depends heavily on the valuation assumptions, including an unresolved question about whether churn is measured monthly or quarterly. Roughly 30% of the base-case profit rested on 7 customers. The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
 
 ---
 
 ## 1. Introduction
 
-**Customer churn** is when a customer stops doing business with a company. For a telecom provider, it means a subscriber cancels phone or internet service. Each cancellation removes a stream of monthly revenue, and acquiring a replacement customer typically costs more than retaining an existing one. The **churn rate** is the share of customers who leave in a given period. In the data used here, 26.5% of customers left within a single month. Churn modeling is usually framed as a classification problem: given what we know about a customer, predict the probability that they leave. That framing is necessary but incomplete. A retention team has a limited budget, every offer has a cost, and customers differ in how much revenue they would bring if saved. A model that ranks customers well by risk can still direct money to the wrong people. This project treats churn prediction as the first step of a decision problem. It estimates churn probabilities, identifies what drives them, assigns each customer a dollar value, and evaluates whether a retention campaign built on those estimates would make money.
+**Customer churn** is when a customer stops doing business with a company. For a telecom provider, it means a subscriber cancels phone or internet service. Each cancellation removes a stream of monthly revenue that can only be replaced by winning new customers, which has its own cost. The **churn rate** is the share of customers who leave in a given period. In the data used here, 26.5% of customers left within a single month. Churn modeling is usually framed as a classification problem: given what we know about a customer, predict the probability that they leave. That framing is necessary but incomplete. A retention team has a limited budget, every offer has a cost, and customers differ in how much revenue they would bring if saved. A model that ranks customers well by risk can still direct money to the wrong people. This project treats churn prediction as the first step of a decision problem. It estimates churn probabilities, identifies what drives them, assigns each customer a dollar value, and evaluates whether a retention campaign built on those estimates would make money.
 
 ---
 
@@ -42,7 +42,7 @@ Customer churn, the loss of subscribers through cancellation, directly reduces r
 
 ## 2. Motivation
 
-Customer churn is one of the most common portfolio projects in data science, and this dataset is one of the most common ways to do it. Hundreds of public versions follow the same template: encode the variables, often oversample the minority class, train several classifiers, and report an accuracy score of around 80% with a feature-importance chart.
+Customer churn is one of the most common portfolio projects in data science, and this dataset is one of the most common ways to do it. Many public versions follow the same template: encode the variables, often oversample the minority class, train several classifiers, and report an accuracy score of around 80% with a feature-importance chart.
 
 That template has 3 gaps that matter to a business.
 
@@ -72,13 +72,13 @@ This project was built to close those gaps, using a well-known dataset on purpos
 
 ## 4. Related Literature
 
-**Standard churn classification.** Most public work on this dataset treats churn as a pure classification task evaluated by accuracy, F1 or AUC at a fixed 0.5 cutoff. A recurring methodological error is oversampling (e.g., SMOTE) applied before the train/test split, which leaks test information into training and inflates reported performance.
+**Standard churn classification.** Most public work on this dataset treats churn as a pure classification task evaluated by accuracy, F1 or AUC at a fixed 0.5 cutoff. A methodological pitfall to avoid is oversampling (e.g., SMOTE) before the train/test split, which leaks test information into training and inflates reported performance.
 
-**Profit-based evaluation.** The e-Profits metric (University College Cork) argues that AUC and F1 can misdirect retention decisions because they ignore customer value and intervention costs. Evaluated on profit, including on IBM Telco, the ranking of models changes. This project adopts the same principle: campaign profit, not AUC, is the final measure.
+**Profit-based evaluation.** The e-Profits metric (Manzoor et al., 2026) argues that AUC and F1 can misdirect retention decisions because they ignore customer value and intervention costs. Evaluated on profit, including on IBM Telco, the ranking of models changes. This project adopts the same principle: campaign profit, not AUC, is the final measure.
 
-**Survival analysis and customer lifetime value.** Databricks' Telco churn solution accelerator applies Kaplan-Meier, Cox proportional hazards and accelerated failure time models to this dataset and converts survival estimates into customer lifetime value. Survival methods model *when* a customer leaves, not only *whether*. Because this dataset is a single cross-section without churn dates, this project uses the simplest lifetime approximation the data supports (Section 7.4) and treats a full survival model as future work.
+**Survival analysis and customer lifetime value.** Databricks' Telco churn solution accelerator (Morris et al., 2021) applies Kaplan-Meier, Cox proportional hazards and accelerated failure time models to this dataset and converts survival estimates into customer lifetime value. Survival methods model *when* a customer leaves, not only *whether* (see Santos, 2026, for an introduction). Because this dataset is a single cross-section without churn dates, this project uses the simplest lifetime approximation the data supports (Section 7.4) and treats a full survival model as future work.
 
-**Model complexity.** Across many tabular prediction problems, gradient boosting often matches or beats simpler models. Where one or two variables carry most of the signal, a linear model frequently captures nearly all of it. RQ2 tests which situation this dataset is in.
+**Model complexity.** Flexible models such as gradient boosting can capture interactions and non-linear effects that a logistic regression cannot. Whether that improves prediction depends on the data: if most of the signal is additive, a linear model captures nearly all of it. RQ2 tests which situation this dataset is in.
 
 ---
 
@@ -86,7 +86,9 @@ This project was built to close those gaps, using a well-known dataset on purpos
 
 ### 5.1 Source
 
-The data is IBM's [Telco Customer Churn](https://github.com/IBM/telco-customer-churn-on-icp4d) sample dataset, which describes a fictional California telecom provider. Each row is one customer. The outcome records whether the customer left within the last month. All other variables describe the customer at the time of observation.
+The data is IBM's [Telco Customer Churn](https://github.com/IBM/telco-customer-churn-on-icp4d) sample dataset (Apache 2.0 license). IBM describes it as a fictional telecom company that provided home phone and internet services to 7,043 customers in California in Q3 (IBM Samples Team, 2019). Each row is one customer. All other variables describe the customer at the time of observation.
+
+**A note on the churn window.** The widely used documentation for this dataset defines `Churn` as leaving "within the last month" (e.g., the Mendeley Data listing), while IBM's own description refers to a quarter (Q3). This analysis follows the monthly definition. The choice doesn't affect the prediction results, but it changes the customer valuation in Section 7.4 substantially, so Section 9.3 re-runs the campaign under the quarterly reading.
 
 ### 5.2 Sample
 
@@ -146,7 +148,7 @@ Two patterns stand out before any modeling:
 
 | Variable | Definition | Type |
 |---|---|---|
-| `Churn` | 1 if the customer left within the last month, 0 otherwise | Binary |
+| `Churn` | 1 if the customer left within the last month (see the churn-window note in 5.1), 0 otherwise | Binary |
 
 ### 6.2 Explanatory variables
 
@@ -214,7 +216,7 @@ Candidate feature sets were compared within logistic regression on cross-validat
 
 ### 7.4 Customer value
 
-Because the outcome measures churn within one month, each contract group's churn rate is treated as a monthly hazard *h*. Under a constant hazard, a customer's expected remaining lifetime is approximately 1/*h* months, capped here at 24. The value of saving a customer is their monthly bill multiplied by that expected lifetime. Hazards are estimated on the training data only.
+Treating the outcome as churn within one month (Section 5.1), each contract group's churn rate is treated as a monthly hazard *h*. Under a constant hazard, a customer's expected remaining lifetime is approximately 1/*h* months, capped here at 24. The value of saving a customer is their monthly bill multiplied by that expected lifetime. Hazards are estimated on the training data only.
 
 This is the study's strongest assumption. Its consequences are tested in Section 9.3.
 
@@ -261,7 +263,7 @@ Logistic regression has the lowest log loss outright. XGBoost and LightGBM are s
 
 Precision, recall, and F1 use a 0.5 cutoff for comparability with other studies; the campaign itself uses expected value, not a fixed cutoff. On the test set, the log loss gap to XGBoost is −0.0018 (95% CI −0.0055 to +0.0018), and to LightGBM −0.0007 (95% CI −0.0043 to +0.0030). Both intervals include zero, which confirms the tie.
 
-![Calibration](outputs/calibration.png)
+![Calibration](calibration.png)
 
 The predicted probabilities are well calibrated: customers given a 40% churn probability churn about 40% of the time. Platt recalibration did not improve cross-validated log loss, so raw probabilities are used.
 
@@ -271,7 +273,7 @@ The predicted probabilities are well calibrated: customers given a 40% churn pro
 
 Odds ratios from the selected logistic regression. Above 1 means higher churn odds and below 1 means lower, holding the other variables constant. Continuous variables are per one standard deviation.
 
-![Churn drivers](outputs/drivers.png)
+![Churn drivers](drivers.png)
 
 | Associated with higher churn | Odds ratio | Associated with lower churn | Odds ratio |
 |---|---|---|---|
@@ -309,7 +311,7 @@ The common rule of thumb that a saved customer is worth a year of revenue overst
 
 ### 8.4 Targeting and campaign profitability (RQ4)
 
-![Profit curve](outputs/profit_curve.png)
+![Profit curve](profit_curve.png)
 
 | Ranking rule (447 contacts each) | Actual churners reached | Profit | 95% CI |
 |---|---|---|---|
@@ -356,8 +358,13 @@ Platt scaling was evaluated with cross-validation on the training data: CV log l
 | Base case (24-month cap) | 447 | $5,610 | $593 | $5,016 |
 | 12-month lifetime cap | 401 | $3,923 | $878 | $3,044 |
 | Two-year customers excluded | 363 | $3,914 | $1,113 | $2,801 |
+| Churn measured over a quarter, not a month | 749 | $26,871 | $21,503 | $5,368 |
 
-Under either change, total profit falls by about 30%, but ranking by value beats ranking by probability in every scenario. The qualitative conclusion is robust. The dollar magnitude is not.
+With a 12-month cap or without two-year customers, total profit falls by about 30%, but ranking by value still wins.
+
+The churn-window question (Section 5.1) matters most. If `Churn` covers a quarter, the implied monthly churn rates are about a third as high, month-to-month customers stay about 5.9 months instead of 2.3, and one-year customers reach the 24-month cap. Every customer becomes more valuable, the campaign grows to 749 contacts, and both rankings become clearly profitable. Value ranking still earns more ($5,368), but the gap shrinks from roughly 9x to about 1.25x, because contract type no longer separates customer values as sharply.
+
+Ranking by value beats ranking by probability in every scenario. That qualitative conclusion is robust. The size of the advantage and the dollar totals are not.
 
 **Offer cost and success rate** (contacts and realized profit under the expected-value rule):
 
@@ -373,7 +380,7 @@ At a $50 offer and 20% success rate, the model expected 41 contacts to be profit
 
 - **Add-on count (`n_addons`).** An early version included the number of add-ons, which is the exact sum of six variables already in the model (perfect multicollinearity). It was removed.
   
-- **Monthly charges.** With `n_addons` included, the odds ratio on monthly charges was 0.82. After removing `n_addons,`, it became 2.53, and fiber optic fell from 2.95 to 1.18. A sign reversal like that is a classic multicollinearity symptom. Dropping monthly charges left fit unchanged (CV log loss 0.4100 either way) and produced stable coefficients.
+- **Monthly charges.** With `n_addons` included, the odds ratio on monthly charges was 0.82. After removing `n_addons`, it became 2.53, and fiber optic fell from 2.95 to 1.18. A sign reversal like that is a classic multicollinearity symptom. Dropping monthly charges left fit unchanged (CV log loss 0.4100 either way) and produced stable coefficients.
   
 - **Tenure transformation.** Replacing tenure with log(1 + tenure) reduced CV log loss from 0.4176 to 0.4100, the largest single improvement.
   
@@ -385,6 +392,7 @@ At a $50 offer and 20% success rate, the model expected 41 contacts to be profit
 
 - **Cross-sectional data.** The dataset is a single snapshot with no churn dates, usage history, or contract end dates. Time-based validation and full survival models are not possible, and monthly hazards are inferred from one period.
   
+- **Ambiguous churn window.** Dataset documentation conflicts on whether churn covers one month or one quarter. The quarterly reading changes customer values and the size of the targeting advantage substantially (Section 9.3).
 - **Constant-hazard valuation.** Customer value assumes each contract group churns at a constant monthly rate. It ignores contract terms that prevent leaving mid-contract and likely misstates the value of contract customers. Section 9.3 bounds the impact.
   
 - **Associations, not causal effects.** The odds ratios describe who churns, not what would prevent it. Moving a customer from electronic check to automatic payment will not necessarily change their churn risk.
@@ -405,11 +413,11 @@ On prediction, the main finding is that model complexity does not matter on this
 
 On determinants, contract type and tenure dominate: customers who have committed stay. Fiber-optic customers churn at 2.5 times the odds of comparable DSL customers, the clearest signal for a product team. Several large raw differences, notably for senior citizens, largely disappear once other characteristics are held constant.
 
-On decisions, the most consequential step happened after the model. Valuing customers by expected remaining lifetime shows that a saved month-to-month customer is worth about two months of revenue, not twelve. Targeting by expected value rather than churn probability earned far more in a simulated campaign, and that advantage held under every sensitivity scenario tested. The dollar totals were less robust: they fell by about 30% under conservative assumptions, and a third of the profit rested on seven customers.
+On decisions, the most consequential step happened after the model. Valuing customers by expected remaining lifetime shows that a saved month-to-month customer is worth about two months of revenue, not twelve. Targeting by expected value rather than churn probability earned far more in a simulated campaign, and that advantage held under every sensitivity scenario tested. Its size was far less robust: it fell by about 30% under conservative assumptions, shrank to about 1.25x if churn is measured quarterly, and a third of the base-case profit rested on seven customers.
 
 The practical recommendations follow directly:
 
-1. **Target retention offers by expected value, not churn risk alone. ****
+1. **Target retention offers by expected value, not churn risk alone.**
 2. **Favor offers that convert customers to contracts** over one-time discounts, because contract status changes customer value nearly tenfold.
 3. **Investigate fiber-optic churn** as a product or pricing issue.
 4. **Test any offer on a randomized group before scaling it**, since the campaign's profitability depends on a success rate this data cannot measure.
@@ -429,31 +437,32 @@ The practical recommendations follow directly:
 
 ```bash
 pip install -r requirements.txt
-cd notebooks
-jupyter notebook churn_model.ipynb      # full analysis, about 15 minutes on a 2-core machine
-cd ..
+jupyter notebook churn_model.ipynb      # full analysis, about 10-15 minutes on a 2-core machine
 python robustness_check.py              # Section 9.1, a few minutes
 ```
 
 Package versions are pinned, and random seeds are fixed, so results match this document.
 
 ```
-data/telco_raw.csv           IBM Telco Customer Churn sample data
-notebooks/churn_model.ipynb  cleaning, specification search, 11-model comparison, calibration,
-                             determinants, customer value, campaign, sensitivity
-robustness_check.py          extended boosting search (Section 9.1)
-outputs/                     calibration.png, drivers.png, profit_curve.png
-requirements.txt             pinned package versions
+telco_raw.csv          IBM Telco Customer Churn sample data
+churn_model.ipynb      cleaning, specification search, 11-model comparison, calibration,
+                       determinants, customer value, campaign, sensitivity
+robustness_check.py    extended boosting search (Section 9.1)
+calibration.png, drivers.png, profit_curve.png    charts (written by the notebook)
+requirements.txt       pinned package versions
+LICENSE-DATA-APACHE-2.0.txt   Apache 2.0 license covering the IBM dataset
 ```
 
 ---
 
 ## 14. References
 
-- Databricks (2021). *Solution Accelerator: Telco Customer Churn Predictor.* https://databricks.com/blog/2021/02/24/solution-accelerator-telco-customer-churn-predictor.html
-- IBM. *Telco Customer Churn* sample dataset. https://github.com/IBM/telco-customer-churn-on-icp4d
-- University College Cork. *e-Profits: A Business-Aligned Evaluation Metric for Profit-Sensitive Customer Churn Prediction.* https://research.ucc.ie/en/publications/e-profits-a-business-aligned-evaluation-metric-for-profit-sensiti/
-- Towards Data Science. *A Survival Analysis Guide with Python: Using Time-to-Event Models to Forecast Customer Lifetime.* https://towardsdatascience.com/a-survival-analysis-guide-with-python-using-time-to-event-models-to-forecast-customer-lifetime/
+- Manzoor, A., Qureshi, M. A., Kidney, E., & Longo, L. (2026). e-profits: A business-aligned evaluation metric for profit-sensitive customer churn prediction. *International Journal of Data Science and Analytics*, 22(1), Article 75. https://doi.org/10.1007/s41060-026-01044-6
+- Morris, D., Leano, H., & Sobel, S. (2021, February 24). *Solution Accelerator: Telco Customer Churn Predictor.* Databricks Blog. https://databricks.com/blog/2021/02/24/solution-accelerator-telco-customer-churn-predictor.html
+- Santos, G. (2026, April 9). *A Survival Analysis Guide with Python: Using Time-To-Event Models to Forecast Customer Lifetime.* Towards Data Science. https://towardsdatascience.com/a-survival-analysis-guide-with-python-using-time-to-event-models-to-forecast-customer-lifetime/
+- IBM. *telco-customer-churn-on-icp4d* (code pattern and dataset; Apache License 2.0). GitHub. https://github.com/IBM/telco-customer-churn-on-icp4d
+- IBM Samples Team. (2019, July 11). *Telco customer churn* (dataset description). IBM Community. https://community.ibm.com/community/user/blogs/steven-macko/2019/07/11/telco-customer-churn-1113
+- *Telco customer churn IBM dataset.* Mendeley Data. https://data.mendeley.com/datasets/phsxg9ssrf
 
 ---
 
@@ -461,4 +470,6 @@ requirements.txt             pinned package versions
 Data Analyst | Business Analytics | Economics
 GitHub: https://github.com/fariat14
 
-© 2026 Faria T. All rights reserved. This repository is provided for portfolio and educational viewing. No part of it may be reproduced, redistributed,d or used commercially without written permission. If referencing this work, please provide attribution. The IBM Telco dataset is IBM sample data, used here for educational purposes.
+© 2026 Faria T. All rights reserved for the analysis, code, and writing in this repository, except as noted below. They are provided for portfolio and educational viewing. Please do not reuse them commercially without written permission, and provide attribution if you reference this work. (GitHub's Terms of Service still allow others to view and fork public repositories.)
+
+**Third-party data:** `telco_raw.csv` is IBM's Telco Customer Churn sample dataset, redistributed unmodified from [IBM/telco-customer-churn-on-icp4d](https://github.com/IBM/telco-customer-churn-on-icp4d) under the Apache License 2.0. A copy of that license is included as `LICENSE-DATA-APACHE-2.0.txt`. The reservation of rights above does not apply to this file.
