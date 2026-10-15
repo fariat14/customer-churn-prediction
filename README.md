@@ -11,17 +11,7 @@
 
 ## Abstract
 
-Customer churn, the loss of subscribers to cancellation, is a direct and recurring revenue loss for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: 
-
-*which* customers are worth trying to save, and whether doing so is profitable.
-
-Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. 
-
-Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds.
-
-I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives conservative changed to the valuation assumptions, but the dollar totals did not, and roughly 30% of the profit rested on 7 customers. 
-
-The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
+Customer churn, the loss of subscribers through cancellation, directly reduces recurring revenue for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: *which* customers are worth trying to save, and whether doing so is profitable. Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds. I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives conservative changes to the valuation assumptions, but the dollar totals did not, and roughly 30% of the profit rested on 7 customers. The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
 
 ---
 
