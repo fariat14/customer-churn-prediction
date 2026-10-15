@@ -17,15 +17,7 @@ Customer churn, the loss of subscribers through cancellation, directly reduces r
 
 ## 1. Introduction
 
-**Customer churn** is when a customer stops doing business with a company. 
-
-For a telecom provider, it means a subscriber cancels phone or internet service. Each cancellation removes a stream of monthly revenue, and acquiring a replacement customer typically costs more than retaining an existing one.
-
-The **churn rate** is the share of customers who leave in a given period. In the data used here, 26.5% of customers left within a single month.
-
-Churn modeling is usually framed as a classification problem: given what we know about a customer, predict the probability that they leave. That framing is necessary but incomplete. A retention team has a limited budget, every offer has a cost, and customers differ in how much revenue they would bring if saved. A model that ranks customers well by risk can still direct money to the wrong people.
-
-This project treats churn prediction as the first step of a decision problem. It estimates churn probabilities, identifies what drives them, assigns each customer a dollar value, and evaluates whether a retention campaign built on those estimates would make money.
+**Customer churn** is when a customer stops doing business with a company. For a telecom provider, it means a subscriber cancels phone or internet service. Each cancellation removes a stream of monthly revenue, and acquiring a replacement customer typically costs more than retaining an existing one. The **churn rate** is the share of customers who leave in a given period. In the data used here, 26.5% of customers left within a single month. Churn modeling is usually framed as a classification problem: given what we know about a customer, predict the probability that they leave. That framing is necessary but incomplete. A retention team has a limited budget, every offer has a cost, and customers differ in how much revenue they would bring if saved. A model that ranks customers well by risk can still direct money to the wrong people. This project treats churn prediction as the first step of a decision problem. It estimates churn probabilities, identifies what drives them, assigns each customer a dollar value, and evaluates whether a retention campaign built on those estimates would make money.
 
 ---
 
