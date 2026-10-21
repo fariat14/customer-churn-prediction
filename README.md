@@ -376,7 +376,7 @@ Across these valuation scenarios, ranking by value beats ranking by probability.
 
 At a $50 offer and 20% success rate, the model expected 41 contacts to be profitable, and they lost $747. With expensive offers, the margin for error is thin, and a few customers flip the outcome. That is one strong case in this study for testing an offer on a small randomized group before scaling it.
 
-**Save rates that differ by contract type.** The table above changes the success rate for everyone at once. In practice it probably differs by segment: a two-year customer who has decided to leave may not move for a $20 offer, while month-to-month customers may respond more easily. In this test the campaign still ranks customers assuming a flat 20%, because real rates are unknown before testing. Profit is then scored with segment-specific rates standing in for what would actually happen ($20 offer, 447 contacts, bootstrap CI from 1,000 resamples).
+**Save rates that differ by contract type.** *(Added after review feedback.)* The table above changes the success rate for everyone at once. In practice it probably differs by segment: a two-year customer who has decided to leave may not move for a $20 offer, while month-to-month customers may respond more easily. In this test the campaign still ranks customers assuming a flat 20%, because real rates are unknown before testing. Profit is then scored with segment-specific rates standing in for what would actually happen ($20 offer, 447 contacts, bootstrap CI from 1,000 resamples).
 
 | True save rate (month-to-month / 1-yr / 2-yr) | Profit, ranked by value | Profit, ranked by probability | Value-ranking advantage | 95% CI |
 |---|---|---|---|---|
