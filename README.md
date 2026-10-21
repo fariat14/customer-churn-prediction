@@ -11,7 +11,7 @@
 
 ## Abstract
 
-Customer churn, the loss of subscribers through cancellation, directly reduces recurring revenue for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: *which* customers are worth trying to save, and whether doing so is profitable. Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds. I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives every sensitivity check, but its size does not: it depends heavily on the valuation assumptions, including an unresolved question about whether churn is measured monthly or quarterly. Roughly 30% of the base-case profit rested on 7 customers. The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
+Customer churn, the loss of subscribers through cancellation, directly reduces recurring revenue for subscription businesses. Most churn studies stop at predicting *who* will leave. This project asks the question a retention budget depends on: *which* customers are worth trying to save, and whether doing so is profitable. Using IBM's Telco Customer Churn dataset (7,043 customers, 26.5% churn), I compared 11 classification models selected on cross-validated log loss. A regularized logistic regression performed best (test ROC-AUC 0.849, accuracy 80.7%, well calibrated). Gradient-boosted models are statistically indistinguishable from it, and the result holds when they get larger searches and alternative features. Contract type, tenure, and fiber-optic internet are the strongest determinants of churn: a 2-year contract is associated with 78% lower churn odds, and fiber optic with 2.5 times higher odds. I then valued each customer by their expected remaining lifetime and tested a retention campaign under a decision rule fixed in advance. Ranking customers by expected value rather than churn probability raised campaign profit from about $600 to $5,600 on the test set (95% CI for the difference: $2,400 to $8,100). The ranking advantage survives changes to the valuation assumptions, though its size depends heavily on them, including an unresolved question about whether churn is measured monthly or quarterly. It does not survive every scenario: if contract customers who intend to leave rarely respond to an offer, the advantage disappears or reverses. Roughly 30% of the base-case profit rested on 7 customers. The main practical conclusion: retention offers that move customers onto contracts create far more value than one-time discounts.
 
 ---
 
@@ -325,7 +325,7 @@ Ranking by probability reaches *more* churners (260 against 201) but earns far l
 
 An important caveat: profit is computed with the same value formula used to build the expected-value ranking, which gives that ranking a structural advantage. The fair interpretation is conditional: *if the customer values are approximately right, target by value rather than by risk.* Section 9.3 tests how far the values can move before that conclusion breaks.
 
-**Answer to RQ4:** Under the base-case assumptions, target by expected value. Contacting about a third of customers is profitable, while ranking by churn probability alone is roughly break-even. Profitability depends heavily on offer cost and success rate (Section 9.3).
+**Answer to RQ4:** Under the base-case assumptions, target by expected value. Contacting about a third of customers is profitable, while ranking by churn probability alone is roughly break-even. Profitability depends heavily on offer cost and success rate, and the advantage of value ranking depends on the offer working about equally well across contract types (Section 9.3).
 
 ---
 
@@ -364,7 +364,7 @@ With a 12-month cap or without two-year customers, total profit falls by about 3
 
 The churn-window question (Section 5.1) matters most. If `Churn` covers a quarter, the implied monthly churn rates are about a third as high, month-to-month customers stay about 5.9 months instead of 2.3, and one-year customers reach the 24-month cap. Every customer becomes more valuable, the campaign grows to 749 contacts, and both rankings become clearly profitable. Value ranking still earns more ($5,368), but the gap shrinks from roughly 9x to about 1.25x, because contract type no longer separates customer values as sharply.
 
-Ranking by value beats ranking by probability in every scenario. That qualitative conclusion is robust. The size of the advantage and the dollar totals are not.
+Across these valuation scenarios, ranking by value beats ranking by probability. The size of the advantage and the dollar totals are not robust. The next test shows the ranking itself is not robust either once save rates differ by segment.
 
 **Offer cost and success rate** (contacts and realized profit under the expected-value rule):
 
@@ -374,7 +374,18 @@ Ranking by value beats ranking by probability in every scenario. That qualitativ
 | $20 | 89 contacts, $312 | **447 contacts, $5,610** | 619 contacts, $13,302 |
 | $50 | 1 contact, $45 | 41 contacts, −$747 | 142 contacts, $1,170 |
 
-At a $50 offer and 20% success rate, the model expected 41 contacts to be profitable, and they lost $747. With expensive offers, the margin for error is thin, and a few customers flip the outcome. That is the strongest case in this study for testing an offer on a small randomized group before scaling it.
+At a $50 offer and 20% success rate, the model expected 41 contacts to be profitable, and they lost $747. With expensive offers, the margin for error is thin, and a few customers flip the outcome. That is one strong case in this study for testing an offer on a small randomized group before scaling it.
+
+**Save rates that differ by contract type.** The table above changes the success rate for everyone at once. In practice it probably differs by segment: a two-year customer who has decided to leave may not move for a $20 offer, while month-to-month customers may respond more easily. In this test the campaign still ranks customers assuming a flat 20%, because real rates are unknown before testing. Profit is then scored with segment-specific rates standing in for what would actually happen ($20 offer, 447 contacts, bootstrap CI from 1,000 resamples).
+
+| True save rate (month-to-month / 1-yr / 2-yr) | Profit, ranked by value | Profit, ranked by probability | Value-ranking advantage | 95% CI |
+|---|---|---|---|---|
+| 20% / 20% / 20% (base case) | $5,610 | $593 | $5,016 | $2,430 to $7,963 |
+| 25% / 15% / 5% | $3,674 | $2,790 | $883 | −$531 to $2,373 |
+| 30% / 5% / 0% | $2,326 | $4,894 | **−$2,568** | −$3,344 to −$1,781 |
+| 10% / 20% / 30% | $3,908 | −$3,987 | $7,895 | $4,130 to $11,948 |
+
+This is the most important limit on the main result. Value ranking earns its advantage by prioritizing high-value contract customers. If those customers barely respond to the offer, the advantage shrinks to statistical noise (25/15/5) or reverses (30/5/0), and ranking by churn probability makes more money. If they respond better than average, the advantage grows. The data cannot distinguish these cases, because it contains no record of who received an offer. Value ranking is therefore the better rule only if save rates are roughly similar across segments, and that has to be measured with a randomized test before the ranking is trusted. (Thanks to Hiba Fatima for raising this.)
 
 ### 9.4 Specification tests and excluded variables
 
@@ -399,6 +410,8 @@ At a $50 offer and 20% success rate, the model expected 41 contacts to be profit
   
 - **Assumed intervention parameters.** Offer cost and success rate are placeholders. Real values require a randomized experiment.
   
+- **Uniform save rate.** The campaign assumes the offer works equally well in every segment. Section 9.3 shows that if contract customers respond much less than month-to-month customers, value ranking loses its advantage. The data has no treatment records, so uplift by segment cannot be estimated here.
+  
 - **Structural advantage of value ranking.** Profit is evaluated with the same value formula used for ranking, so the comparison shows what happens if the values are right, not whether they are.
   
 - **Sample data.** A 26.5% monthly churn rate is far above real telecom levels. Dollar figures demonstrate the method and are not forecasts.
@@ -413,20 +426,20 @@ On prediction, the main finding is that model complexity does not matter on this
 
 On determinants, contract type and tenure dominate: customers who have committed stay. Fiber-optic customers churn at 2.5 times the odds of comparable DSL customers, the clearest signal for a product team. Several large raw differences, notably for senior citizens, largely disappear once other characteristics are held constant.
 
-On decisions, the most consequential step happened after the model. Valuing customers by expected remaining lifetime shows that a saved month-to-month customer is worth about two months of revenue, not twelve. Targeting by expected value rather than churn probability earned far more in a simulated campaign, and that advantage held under every sensitivity scenario tested. Its size was far less robust: it fell by about 30% under conservative assumptions, shrank to about 1.25x if churn is measured quarterly, and a third of the base-case profit rested on seven customers.
+On decisions, the most consequential step happened after the model. Valuing customers by expected remaining lifetime shows that a saved month-to-month customer is worth about two months of revenue, not twelve. Targeting by expected value rather than churn probability earned far more in a simulated campaign, and that advantage held across every valuation scenario tested. Its size was far less robust: it fell by about 30% under conservative assumptions, shrank to about 1.25x if churn is measured quarterly, and a third of the base-case profit rested on seven customers. The ranking itself depends on one assumption the data cannot check: that the offer works about equally well across contract types. If contract customers who plan to leave rarely respond, ranking by churn probability does better.
 
 The practical recommendations follow directly:
 
-1. **Target retention offers by expected value, not churn risk alone.**
+1. **Target retention offers by expected value, not churn risk alone**, once a test confirms the offer works in high-value segments.
 2. **Favor offers that convert customers to contracts** over one-time discounts, because contract status changes customer value nearly tenfold.
 3. **Investigate fiber-optic churn** as a product or pricing issue.
-4. **Test any offer on a randomized group before scaling it**, since the campaign's profitability depends on a success rate this data cannot measure.
+4. **Test any offer on a randomized group before scaling it, and measure the save rate by segment**, since both the campaign's profitability and the choice of ranking depend on it.
 
 ---
 
 ## 12. Future Research
 
-- **Uplift modeling.** Predict which customers are *persuadable* by an offer, rather than which are likely to leave. Some at-risk customers leave regardless, and contacting them wastes budget.
+- **Uplift modeling.** Predict which customers are *persuadable* by an offer, rather than which are likely to leave. Some at-risk customers leave regardless, and some would stay anyway and only take the discount; contacting either wastes budget. Section 9.3 shows why this matters: segment differences in response can reverse the ranking result. Uplift models need data from a randomized offer, which this dataset does not have.
 - **Survival analysis with panel data.** With churn dates and contract end dates, customer value could come from Kaplan-Meier or Cox models with tenure-dependent hazards instead of a constant monthly rate.
 - **Experimental design.** A randomized test of a retention offer, with the sample size needed to detect a 20% success rate.
 - **Production pipeline.** A dbt and SQL implementation of the feature pipeline, so scoring runs on a warehouse table.
