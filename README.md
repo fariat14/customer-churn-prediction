@@ -385,7 +385,7 @@ At a $50 offer and 20% success rate, the model expected 41 contacts to be profit
 | 30% / 5% / 0% | $2,326 | $4,894 | **−$2,568** | −$3,344 to −$1,781 |
 | 10% / 20% / 30% | $3,908 | −$3,987 | $7,895 | $4,130 to $11,948 |
 
-This is the most important limit on the main result. Value ranking earns its advantage by prioritizing high-value contract customers. If those customers barely respond to the offer, the advantage shrinks to statistical noise (25/15/5) or reverses (30/5/0), and ranking by churn probability makes more money. If they respond better than average, the advantage grows. The data cannot distinguish these cases, because it contains no record of who received an offer. Value ranking is therefore the better rule only if save rates are roughly similar across segments, and that has to be measured with a randomized test before the ranking is trusted. (Thanks to Hiba Fatima for raising this.)
+This is the most important limit on the main result. Value ranking earns its advantage by prioritizing high-value contract customers. If those customers barely respond to the offer, the advantage shrinks to statistical noise (25/15/5) or reverses (30/5/0), and ranking by churn probability makes more money. If they respond better than average, the advantage grows. The data cannot distinguish these cases, because it contains no record of who received an offer. Value ranking is therefore the better rule only if save rates are roughly similar across segments, and that has to be measured with a randomized test before the ranking is trusted.
 
 ### 9.4 Specification tests and excluded variables
 
